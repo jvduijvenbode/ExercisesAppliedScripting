@@ -1,0 +1,12 @@
+library(rasta)
+data(lulcGewata)
+data(GewataB2)
+data(GewataB3)
+data(GewataB4)
+data(vcfGewata)
+ndvi<-overlay(GewataB4,GewataB3,fun=function(x,y){(x-y)/(x+y)})
+bgewata<-brick(lulcGewata,GewataB2,GewataB3,GewataB4,ndvi,vcfGewata)
+plot(lulcGewata)
+data(LUTGewata)
+head(LUTGewata)
+ 
