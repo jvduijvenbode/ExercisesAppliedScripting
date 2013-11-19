@@ -1,12 +1,103 @@
+rm(list=ls())
+install.packages(file.path("C:/Users/duijv006/Downloads", "rasta.zip"),dependencies=T)
+install.packages("raster",dependencies=T)
+install.packages("bitops",dependencies=T)
+install.packages("ggplot2",dependencies=T)
+install.packages("spdep",dependencies=T)
+install.packages("randomForest",dependencies=T)
+install.packages("reshape",dependencies=T)
+install.packages("ggmap",dependencies=T)
+install.packages("spatstat",dependencies=T)
 library(rasta)
+library(raster)
 data(lulcGewata)
 data(GewataB2)
 data(GewataB3)
 data(GewataB4)
 data(vcfGewata)
 ndvi<-overlay(GewataB4,GewataB3,fun=function(x,y){(x-y)/(x+y)})
-bgewata<-brick(lulcGewata,GewataB2,GewataB3,GewataB4,ndvi,vcfGewata)
+bgewata<-brick(GewataB2,GewataB3,GewataB4,ndvi,vcfGewata)
+vcfGewata[vcfGewata>100]<-NA
+cols<-c("blue",'green','pink','brown','green','green4')
+plot(predLC,col=cols,legend=F)
+legend("topright",legend=LUTGewata$Class,fill=cols,bg="white")
+dataType(ndvi)<-"INT2U"
+names(ndvi)<-"NDVI"
+covs<-addLayer(GewataB2,GewataB3,GewataB4,ndvi,vcfGewata)
+plot(covs)
+
+reclass<-function(x){
+  which(x==levels(trainingPoly@data$class))
+}
+trainingPoly@data$Code<-sapply(trainingPoly@data$class,FUN=reclass)
+classes<-rasterize(trainingPoly,ndvi,field="Code",progress="text")
+dataType(classes)<-"INT1U"
+#cols<-c("orange","dark green","light blue")
+#plot(classes,col=cols,legend=F)
+#legend("topright",legend=c("cropland","forest","wetland"),fill=cols,bg="white")
+covmasked<-mask(covs,classes)
+#plot(covmasked)
+names(classes)<-"class"
+trainingbrick<-addLayer(covmasked,classes)
+plot(trainingbrick)
+valuetable<-getValues(trainingbrick)
+valuetable<-as.data.frame(valuetable)
+head(valuetable)
+tail(valuetable)
+valuetable<-valuetable[!is.na(valuetable$class),]
+valuetable$class<-factor(valuetable$class,levels=c(1:6))
+valuetable$label<-with(valuetable,ifelse(class==1,"cropland",ifelse(class==2,"bamboo",ifelse(class==3,"bare soil",ifelse(class==4,"coffee",ifelse(class==5,"forest","wetland"))))))
+valuetable<-na.omit(valuetable)
+
+# draw a SpatialPolygons object in area purely represented by cropland
+# Note that drawPoly() doesn✬t work once you have added a legend() to the plot
+# so, first plot the raster again without the legend
 plot(lulcGewata)
-data(LUTGewata)
-head(LUTGewata)
- 
+plot(lulcGewata, col=cols, legend=FALSE,ext=drawExtent())
+cropland <- drawPoly(sp=TRUE)
+projection(cropland) <- projection(lulcGewata)
+cropland <- SpatialPolygonsDataFrame(cropland, data=data.frame(class="cropland"), match.ID=FALSE)
+plot(lulcGewata)
+plot(lulcGewata, col=cols, legend=FALSE,ext=drawExtent())
+bamboo <- drawPoly(sp=TRUE)
+projection(bamboo) <- projection(lulcGewata)
+bamboo<- SpatialPolygonsDataFrame(bamboo, data=data.frame(class="bamboo"), match.ID=FALSE)
+plot(lulcGewata)
+plot(lulcGewata, col=cols, legend=FALSE,ext=drawExtent())
+baresoil <- drawPoly(sp=TRUE)
+projection(baresoil) <- projection(lulcGewata)
+baresoil<- SpatialPolygonsDataFrame(baresoil, data=data.frame(class="baresoil"), match.ID=FALSE)
+plot(lulcGewata)
+plot(lulcGewata, col=cols, legend=FALSE,ext=drawExtent())
+coffee <- drawPoly(sp=TRUE)
+projection(coffee) <- projection(lulcGewata)
+coffee<- SpatialPolygonsDataFrame(coffee, data=data.frame(class="coffee"), match.ID=FALSE)
+plot(lulcGewata)
+plot(lulcGewata, col=cols, legend=FALSE,ext=drawExtent())
+forest <- drawPoly(sp=TRUE)
+projection(forest) <- projection(lulcGewata)
+forest<- SpatialPolygonsDataFrame(forest, data=data.frame(class="forest"), match.ID=FALSE)
+plot(lulcGewata,add=T)
+
+wetland <- drawPoly(sp=TRUE)
+projection(wetland) <- projection(lulcGewata)
+wetland<- SpatialPolygonsDataFrame(wetland, data=data.frame(class="wetland"), match.ID=FALSE)
+
+cropland <- spChFIDs(cropland, "cropland")
+forest <- spChFIDs(forest, "forest")
+coffee <- spChFIDs(coffee, "coffee")
+baresoil <- spChFIDs(baresoil, "baresoil")
+wetland <- spChFIDs(wetland, "wetland")
+bamboo <- spChFIDs(bamboo, "bamboo")
+
+
+# etc...
+# now they can be bound (2 at a time) as one object using spRbind (maptools)
+trainingPoly <- spRbind(cropland, bamboo)
+trainingPoly <- spRbind(trainingPoly, baresoil)
+trainingPoly <- spRbind(trainingPoly, coffee)
+trainingPoly <- spRbind(trainingPoly, forest)
+trainingPoly <- spRbind(trainingPoly, wetland)
+trainingPolysav<-trainingPoly
+plot(trainingPoly,col=cols)
+projection(bgewata[[1]])
