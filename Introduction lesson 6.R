@@ -63,11 +63,11 @@ reclass<-function(x){
 trainingPoly@data$Code<-sapply(trainingPoly@data$Class,FUN=reclass)
 classes<-rasterize(trainingPoly,ndvi,field="Code",progress="text")
 dataType(classes)<-"INT1U"
-cols<-c("orange","dark green","light blue")
-plot(classes,col=cols,legend=F)
-legend("topright",legend=c("cropland","forest","wetland"),fill=cols,bg="white")
+#cols<-c("orange","dark green","light blue")
+#plot(classes,col=cols,legend=F)
+#legend("topright",legend=c("cropland","forest","wetland"),fill=cols,bg="white")
 covmasked<-mask(covs,classes)
-plot(covmasked)
+#plot(covmasked)
 names(classes)<-"class"
 trainingbrick<-addLayer(covmasked,classes)
 plot(trainingbrick)
@@ -101,9 +101,9 @@ p4<-ggplot(data=valuetable,aes(x=gewataB2,y=gewataB3))+
 p4
 valuetable<-na.omit(valuetable)
 library(randomForest)
-system.time(mode1Rf<-randomForest(x=valuetable[,c(1:4)],y=valuetable$class,importance=T))
-colnames(mode1Rf$confusion)<-c("cropland","forest","wetland","class.error")
-rownames(mode1Rf$confusion)<-c("cropland","forest","wetland")
+system.time(mode1Rf<-randomForest(x=valuetable[,c(1:5)],y=valuetable$class,importance=T))
+colnames(mode1Rf$confusion)<-c("cropland","bamboo","bare soil","coffee","forest","wetland","class.error")
+rownames(mode1Rf$confusion)<-c("cropland","bamboo","bare soil","coffee","forest","wetland")
 mode1Rf$confusion
 varImpPlot(mode1Rf)
 names(covs)
@@ -112,3 +112,5 @@ predLC<-predict(covs,model=mode1Rf,na.rm=T)
 cols<-c("orange","dark green","light blue")
 plot(predLC,col=cols,legend=F)
 legend("bottomright",legend=c("cropland","forest","wetland"),fill=cols,bg="white")
+
+
