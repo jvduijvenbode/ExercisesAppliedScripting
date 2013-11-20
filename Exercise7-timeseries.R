@@ -10,6 +10,10 @@ tura2000<-calc(subset(tura,subset=which(sceneinfo$year==2000)),fun=mean,na.rm=T)
 tura2005<-calc(subset(tura,subset=which(sceneinfo$year==2005)),fun=mean,na.rm=T)
 tura2010<-calc(subset(tura,subset=which(sceneinfo$year==2010)),fun=mean,na.rm=T)
 tura_sel<-brick(tura2000,tura2005,tura2010)
+#plot the three maps for individual years
+levelplot(tura_sel)
+
+
 
 #create spatial polygons of user-defined extent
 #the focus is on areas that have seen a lot of change in NDVI between 2000-2005, and 2005-2010 respectively
@@ -20,13 +24,17 @@ e2010<-Polygon( coords=coords2)
 le2005<-Polygons(list(e2005),ID="s1")
 le2010<-Polygons(list(e2010),ID="s2")
 e2005sp<-SpatialPolygons(list(le2005,le2010),proj4string=CRS(projection(tura[[1]])))
+#plot the composite RGB plot with selected Area's of interest
 plotRGB(tura_sel,r=1,g=2,b=3,stretch="hist")
 plot(e2005sp,add=T,col=c("red","yellow"))
+
+
+#get NDVI values from selected areas
 NDVIpArea<-extract(tura_sel,e2005sp)
 NDVIpA<-as.data.frame(t(rbind(colMeans(as.data.frame(NDVIpArea[[1]])),colMeans(as.data.frame(NDVIpArea[[2]])))))
 NDVIpA<-cbind(NDVIpA,year=c(2000,2005,2010))
 names(NDVIpA)<-c("Area2005","Area2010","year")
-
+#melt the data so the graphs can be plotted and then plot the graphs
 MNDVI<-melt(NDVIpA, id=c("year"))
 ggpl <- ggplot(data = MNDVI, aes(x=year,y=value))+geom_line()
 ggpl+facet_wrap(~variable)+
