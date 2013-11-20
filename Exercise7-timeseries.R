@@ -30,13 +30,13 @@ plot(e2005sp,add=T,col=c("red","yellow"))
 
 
 #get NDVI values from selected areas
-NDVIpArea<-extract(tura_sel,e2005sp)
+NDVIpArea<-extract(tura,e2005sp)
 NDVIpA<-as.data.frame(t(rbind(colMeans(as.data.frame(NDVIpArea[[1]])),colMeans(as.data.frame(NDVIpArea[[2]])))))
-NDVIpA<-cbind(NDVIpA,year=c(2000,2005,2010))
+NDVIpA<-cbind(NDVIpA,year=sceneinfo$year)
 names(NDVIpA)<-c("Area2005","Area2010","year")
 #melt the data so the graphs can be plotted and then plot the graphs
 MNDVI<-melt(NDVIpA, id=c("year"))
-ggpl <- ggplot(data = MNDVI, aes(x=year,y=value))+geom_line()
+ggpl <- ggplot(data = MNDVI, aes(x=year,y=value))+geom_point(na.rm=T)
 ggpl+facet_wrap(~variable)+
   labs(y="NDVI")+
   scale_y_continuous(limits=c(0.5,1))+
